@@ -39,6 +39,7 @@ class BashFileIterator:
         self.pos = 0
         self.insideComment = False
         self.insideHereDoc = False
+        self.insideRedirector = False
 
         # possible characters in stack:
         # (, ) -- means Arithmetic Expansion or Command Substitution
@@ -204,6 +205,11 @@ class BashFileIterator:
                                     if hereDocWord[0] == '-':
                                         hereDocWord = hereDocWord[1:]
                                     hereDocWord = hereDocWord.strip().replace('"', '').replace("'", '')
+                            elif ch == '<':
+                                if self.getNextCharacter() in (' ' '\t'):
+                                    self.insideRedirector = 1
+                                else:
+                                    self.insideRedirector = 0
 
             yield ch
 
@@ -230,6 +236,9 @@ class BashFileIterator:
     def isInsideHereDoc(self):
         return self.insideHereDoc
 
+    def isInsideRedirector(self):
+        return self.insideRedirector
+
     def isInsideParameterExpansion(self):
         return self.getLastGroupOpeningDelimiter() == '{'
 
@@ -245,7 +254,7 @@ class BashFileIterator:
 
     def isInsideGroupWhereWhitespacesCannotBeTruncated(self):
         return self.isInsideComment() or self.isInsideDoubleQuotedString() or self.isInsideDoubleQuotedString() or \
-               self.isInsideHereDoc() or self.isInsideParameterExpansion()
+               self.isInsideHereDoc() or self.isInsideParameterExpansion() or self.isInsideRedirector()
 
 
 def minify(src):
